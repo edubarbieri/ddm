@@ -2,6 +2,8 @@ import yaml
 import os
 from models.FileData import FileData
 from clients.TvdbClient import TVDBClient
+import os
+import pathlib
 config = {}
 # read config file
 with open("config.yml", 'r') as stream:
@@ -32,10 +34,13 @@ def process_file(root, file):
     if not file_data.is_serie:
         print("movie moving is not implemented")
         return
-    
-    new_path = os.path.join(config["targetFolder"], get_serie_new_path(file_data))
+
+    new_path = os.path.join(
+        config["targetFolder"], get_serie_new_path(file_data))
     print("moving {0} to {1}".format(file_data.path, new_path))
     if not config["testMode"]:
+        #create new folder
+        pathlib.Path(os.path.dirname(new_path)).mkdir(parents=True, exist_ok=True) 
         os.rename(file_data.path, new_path)
 
 
@@ -45,12 +50,13 @@ def get_serie_new_path(file_data):
         serie_name = file_data.name
     episode_name = _get_tvdbclient().get_episode_name(
         file_data.name, file_data.season, file_data.episode)
-    
+    _, ext = os.path.splitext(file_data.path)
     if episode_name == None:
-        return "{0}/Season {1:02d}/{0} - S{1:02d}E{2:02d}".format(serie_name, file_data.season, file_data.episode)
+        return "{0}/Season {1:02d}/{0} - S{1:02d}E{2:02d}{3}".format(
+            serie_name, file_data.season, file_data.episode, ext)
     else:
-        return "{0}/Season {1:02d}/{0} - S{1:02d}E{2:02d} - {3}".format(serie_name, file_data.season, file_data.episode, episode_name)
-
+        return "{0}/Season {1:02d}/{0} - S{1:02d}E{2:02d} - {3}{4}".format(
+            serie_name, file_data.season, file_data.episode, episode_name, ext)
 
 
 tvdb_client = None
