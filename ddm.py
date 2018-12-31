@@ -83,7 +83,7 @@ osub_client = None
 def _get_osub_client():
     global osub_client
     if osub_client == None:
-        osub_client = OpenSubtitlesClient(config)
+        osub_client = OpenSubtitlesClient(config["opensubtitles"])
     return osub_client
 
 
