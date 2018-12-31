@@ -6,6 +6,7 @@ from clients.OpenSubtitles import OpenSubtitlesClient
 import os
 import pathlib
 import utils
+import sys
 config = {}
 # read config file
 with open("config.yml", 'r') as stream:
@@ -102,4 +103,14 @@ def process_subtitles():
 
 if __name__ == '__main__':
     print_logo()
-    process_pending_files()
+    if len(sys.argv) == 1:
+        process_pending_files()
+        process_subtitles()
+    else:
+        for arg in sys.argv[1:]:
+            if arg == "subtitle" or arg == "subtitles":
+                process_subtitles()
+            elif arg == "move" or arg == "organize":
+                process_pending_files()
+            else:
+                print("unrecognized option {}".format(arg))
