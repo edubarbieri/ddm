@@ -96,9 +96,8 @@ def process_subtitles():
     for root, _, files in os.walk(targer_folder):
         for file in files:
             _, ext = os.path.splitext(file)
-            if ext not in config['videoExts']:
-                return
-            subtitle(os.path.join(root, file))
+            if ext in config['videoExts']:
+                subtitle(os.path.join(root, file))
 
 
 if __name__ == '__main__':
