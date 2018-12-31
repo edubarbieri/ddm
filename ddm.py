@@ -2,8 +2,10 @@ import yaml
 import os
 from models.FileData import FileData
 from clients.TvdbClient import TVDBClient
+from clients.OpenSubtitles import OpenSubtitlesClient
 import os
 import pathlib
+import utils
 config = {}
 # read config file
 with open("config.yml", 'r') as stream:
@@ -39,9 +41,11 @@ def process_file(root, file):
         config["targetFolder"], get_serie_new_path(file_data))
     print("moving {0} to {1}".format(file_data.path, new_path))
     if not config["testMode"]:
-        #create new folder
-        pathlib.Path(os.path.dirname(new_path)).mkdir(parents=True, exist_ok=True) 
+        # create new folder
+        pathlib.Path(os.path.dirname(new_path)).mkdir(
+            parents=True, exist_ok=True)
         os.rename(file_data.path, new_path)
+        subtitle(new_path)
 
 
 def get_serie_new_path(file_data):
@@ -51,12 +55,15 @@ def get_serie_new_path(file_data):
     episode_name = _get_tvdbclient().get_episode_name(
         file_data.name, file_data.season, file_data.episode)
     _, ext = os.path.splitext(file_data.path)
+    new_path = None
     if episode_name == None:
-        return "{0}/Season {1:02d}/{0} - S{1:02d}E{2:02d}{3}".format(
+        new_path = "{0}/Season {1:02d}/{0} - S{1:02d}E{2:02d}{3}".format(
             serie_name, file_data.season, file_data.episode, ext)
     else:
-        return "{0}/Season {1:02d}/{0} - S{1:02d}E{2:02d} - {3}{4}".format(
+        new_path = "{0}/Season {1:02d}/{0} - S{1:02d}E{2:02d} - {3}{4}".format(
             serie_name, file_data.season, file_data.episode, episode_name, ext)
+
+    return utils.safe_name(new_path)
 
 
 tvdb_client = None
@@ -67,6 +74,30 @@ def _get_tvdbclient():
     if tvdb_client == None:
         tvdb_client = TVDBClient()
     return tvdb_client
+
+
+osub_client = None
+
+
+def _get_osub_client():
+    global osub_client
+    if osub_client == None:
+        osub_client = OpenSubtitlesClient(config)
+    return osub_client
+
+
+def subtitle(path):
+    _get_osub_client().download_subtitle(path)
+
+
+def process_subtitles():
+    targer_folder = config['targetFolder']
+    for root, _, files in os.walk(targer_folder):
+        for file in files:
+            _, ext = os.path.splitext(file)
+            if ext not in config['videoExts']:
+                return
+            subtitle(os.path.join(root, file))
 
 
 if __name__ == '__main__':
