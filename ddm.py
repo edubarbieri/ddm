@@ -88,6 +88,8 @@ def _get_osub_client():
 
 
 def subtitle(path):
+    if _get_osub_client().subtitle_exists(path):
+        return
     _get_osub_client().download_subtitle(path)
 
 
