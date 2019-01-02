@@ -1,12 +1,12 @@
 import yaml
 import os
-from models.FileData import FileData
-from clients.TvdbClient import TVDBClient
-from clients.OpenSubtitles import OpenSubtitlesClient
+from filedata import FileData
 import os
 import pathlib
 import utils
 import sys
+import subtitles
+import tvdb
 config = {}
 # read config file
 with open("config.yml", 'r') as stream:
@@ -38,8 +38,7 @@ def process_file(root, file):
         print("movie moving is not implemented")
         return
 
-    new_path = os.path.join(
-        config["targetFolder"], get_serie_new_path(file_data))
+    new_path = os.path.join(config["targetFolder"], file_data.get_new_path())
     print("moving {0} to {1}".format(file_data.path, new_path))
     if not config["testMode"]:
         # create new folder
@@ -49,48 +48,11 @@ def process_file(root, file):
         subtitle(new_path)
 
 
-def get_serie_new_path(file_data):
-    serie_name = _get_tvdbclient().get_serie_name(file_data.name)
-    if serie_name == None:
-        serie_name = file_data.name
-    episode_name = _get_tvdbclient().get_episode_name(
-        file_data.name, file_data.season, file_data.episode)
-    _, ext = os.path.splitext(file_data.path)
-    new_path = None
-    if episode_name == None:
-        new_path = "{0}/Season {1:02d}/{0} - S{1:02d}E{2:02d}{3}".format(
-            serie_name, file_data.season, file_data.episode, ext)
-    else:
-        new_path = "{0}/Season {1:02d}/{0} - S{1:02d}E{2:02d} - {3}{4}".format(
-            serie_name, file_data.season, file_data.episode, episode_name, ext)
-
-    return utils.safe_name(new_path)
-
-
-tvdb_client = None
-
-
-def _get_tvdbclient():
-    global tvdb_client
-    if tvdb_client == None:
-        tvdb_client = TVDBClient()
-    return tvdb_client
-
-
-osub_client = None
-
-
-def _get_osub_client():
-    global osub_client
-    if osub_client == None:
-        osub_client = OpenSubtitlesClient(config["opensubtitles"])
-    return osub_client
-
 
 def subtitle(path):
-    if _get_osub_client().subtitle_exists(path):
+    if subtitles.subtitle_exists(path):
         return
-    _get_osub_client().download_subtitle(path)
+    subtitles.search_subtitles(path)
 
 
 def process_subtitles():
