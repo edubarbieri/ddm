@@ -7,22 +7,15 @@ import utils
 import sys
 import subtitles
 import tvdb
-config = {}
-# read config file
-with open("config.yml", 'r') as stream:
-    try:
-        config = yaml.safe_load(stream)
-    except yaml.YAMLError as exc:
-        print("Error reading config file: ", exc)
-        exit(1)
-
+import feed
+import config
 
 def print_logo():
     print("DDM v0.1")
 
 
 def process_pending_files():
-    source_folder = config['sourceFolder']
+    source_folder = config.get_config()['sourceFolder']
     for root, _, files in os.walk(source_folder):
         for file in files:
             process_file(root, file)
@@ -30,7 +23,7 @@ def process_pending_files():
 
 def process_file(root, file):
     _, ext = os.path.splitext(file)
-    if ext not in config['videoExts']:
+    if ext not in config.get_config()['videoExts']:
         return
     file_path = os.path.join(root, file)
     file_data = FileData(file_path)
@@ -38,9 +31,9 @@ def process_file(root, file):
         print("movie moving is not implemented")
         return
 
-    new_path = os.path.join(config["targetFolder"], file_data.get_new_path())
+    new_path = os.path.join(config.get_config()["targetFolder"], file_data.get_new_path())
     print("moving {0} to {1}".format(file_data.path, new_path))
-    if not config["testMode"]:
+    if not config.get_config()["testMode"]:
         # create new folder
         pathlib.Path(os.path.dirname(new_path)).mkdir(
             parents=True, exist_ok=True)
@@ -56,11 +49,11 @@ def subtitle(path):
 
 
 def process_subtitles():
-    targer_folder = config['targetFolder']
+    targer_folder = config.get_config()['targetFolder']
     for root, _, files in os.walk(targer_folder):
         for file in files:
             _, ext = os.path.splitext(file)
-            if ext in config['videoExts']:
+            if ext in config.get_config()['videoExts']:
                 subtitle(os.path.join(root, file))
 
 
@@ -75,5 +68,7 @@ if __name__ == '__main__':
                 process_subtitles()
             elif arg == "move" or arg == "organize":
                 process_pending_files()
+            elif arg == "feed":
+                feed.process()
             else:
                 print("unrecognized option {}".format(arg))
